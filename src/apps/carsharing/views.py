@@ -4,7 +4,8 @@ from django.http import HttpResponse
 from django.views import View
 from rest_framework import status
 
-from .models import Car, CarSerializer, Offer, OfferSerializer
+from .models import Car, Offer
+from .serializer import CarSerializer, OfferSerializer
 
 
 class CarIsBusy(Exception):

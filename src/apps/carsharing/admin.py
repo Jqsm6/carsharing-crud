@@ -22,4 +22,4 @@ class CarAdmin(admin.ModelAdmin):
 
 @admin.register(Offer)
 class OfferAdmin(admin.ModelAdmin):
-    list_display = ("car_id", "renter")
+    list_display = ("offer_id", "car_id", "renter_id")
