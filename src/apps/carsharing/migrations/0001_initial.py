@@ -4,21 +4,40 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Car',
+            name="Car",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('car_brand', models.CharField(max_length=50, verbose_name='Car brand')),
-                ('car_model', models.CharField(max_length=50, verbose_name='Car model')),
-                ('car_year', models.CharField(max_length=4, verbose_name='Car year')),
-                ('status', models.CharField(choices=[('Ready', 'Busy')], max_length=10, verbose_name='Status')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "car_brand",
+                    models.CharField(max_length=50, verbose_name="Car brand"),
+                ),
+                (
+                    "car_model",
+                    models.CharField(max_length=50, verbose_name="Car model"),
+                ),
+                ("car_year", models.CharField(max_length=4, verbose_name="Car year")),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[("Ready", "Busy")],
+                        max_length=10,
+                        verbose_name="Status",
+                    ),
+                ),
             ],
         ),
     ]
