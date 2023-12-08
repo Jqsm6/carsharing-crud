@@ -1,5 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from pydantic import BaseModel
+
 
 class Car(models.Model):
     """Rental car model."""
@@ -29,3 +31,27 @@ class Offer(models.Model):
 
     def __str__(self):
         return f"{self.offer_id} - {self.car_id} - {self.renter_id}"
+
+
+class CarPydantic(BaseModel):
+    """Pydantic model for rental car."""
+
+    car_id: int
+    car_brand: str
+    car_model: str
+    car_year: int
+    status: str
+
+    class Config:
+        from_attributes = True
+
+
+class OfferPydantic(BaseModel):
+    """Pydantic model for offer."""
+
+    offer_id: int
+    car_id: int
+    renter_id: int
+
+    class Config:
+        from_attributes = True
