@@ -1,109 +1,67 @@
-import json
+import logging
 
-from django.http import HttpResponse
-from django.views import View
-from rest_framework import status
-
-from .models import Car, Offer
 from .serializer import CarSerializer, OfferSerializer
+from .models import Car, Offer
+from .helpers import validation_offer, ValidationError
 
 
-class CarIsBusy(Exception):
-    pass
+class ServiceError(Exception):
+    def __init__(self, msg):
+        self.msg = msg
+        self.error_msg = f"ServiceError: {msg}"
+
+    def get_error_msg(self):
+        return self.error_msg
 
 
-class CarCrudView(View):
-    def post(self, request, format=None):
-        json_data = request.body.decode("utf-8")
-        data = json.loads(json_data)
+class CarService:
+    def create_car(self, data):
         serializer = CarSerializer(data=data)
-
         if serializer.is_valid():
             serializer.save()
-            response_data = serializer.data
-            json_response = json.dumps(response_data)
-            return HttpResponse(
-                json_response,
-                status=status.HTTP_201_CREATED,
-                content_type="application/json",
-            )
+            return serializer.data
+        else:
+            raise ServiceError(serializer.errors)
 
-        error_data = serializer.errors
-        json_error = json.dumps(error_data)
-        return HttpResponse(
-            json_error,
-            status=status.HTTP_400_BAD_REQUEST,
-            content_type="application/json",
-        )
-
-    def get(self, request, format=None):
-        car_list = Car.objects.all()
-        serializer = CarSerializer(car_list, many=True)
-        data = serializer.data
-        json_data = json.dumps(data)
-        return HttpResponse(json_data, content_type="application/json")
+    def get_all_cars(self):
+        cars = Car.objects.all()
+        serializer = CarSerializer(cars, many=True)
+        return serializer.data
 
 
-class OfferCrudView(View):
-    def post(self, request, format=None):
-        json_data = request.body.decode("utf-8")
-        data = json.loads(json_data)
+class OfferService:
+    def create_offer(self, data):
         serializer = OfferSerializer(data=data)
-
         if serializer.is_valid():
             serializer.save()
 
-            car_id = data.get("car_id")
             try:
-                car = Car.objects.get(car_id=car_id)
-                if car.status == "BSY":
-                    raise CarIsBusy
+                car = validation_offer(serializer.data)
                 car.status = "BSY"
                 car.save()
-            except Car.DoesNotExist:
-                print("Car does not exist.")
-                return HttpResponse(status=status.HTTP_404_NOT_FOUND)
-            except CarIsBusy:
-                print("Car is busy.")
-                return HttpResponse(status=status.HTTP_400_BAD_REQUEST)
-
-            response_data = serializer.data
-            json_response = json.dumps(response_data)
-            return HttpResponse(
-                json_response,
-                status=status.HTTP_201_CREATED,
-                content_type="application/json",
-            )
+                return serializer.data
+            except ValidationError as err:
+                logging.error(err.get_error_msg())
+                raise err
 
         error_data = serializer.errors
-        json_error = json.dumps(error_data)
-        return HttpResponse(
-            json_error,
-            status=status.HTTP_400_BAD_REQUEST,
-            content_type="application/json",
-        )
+        print(error_data)
+        if 'car_id' or 'renter_id' in error_data:
+            error_message = "does_not_exist"
+            raise ValidationError(error_message)
+        raise ServiceError(error_data)
 
-    def get(self, request, format=None):
-        offer_list = Offer.objects.all()
-        serializer = OfferSerializer(offer_list, many=True)
-        data = serializer.data
-        json_data = json.dumps(data)
-        return HttpResponse(json_data, content_type="application/json")
+    def get_all_offers(self):
+        offers = Offer.objects.all()
+        serializer = OfferSerializer(offers, many=True)
+        return serializer.data
 
-    def delete(self, request, format=None):
-        json_data = request.body.decode("utf-8")
-        data = json.loads(json_data)
-        offer_id = data.get("offer_id")
-
+    def delete_offer(self, offer_id):
         try:
             offer = Offer.objects.get(offer_id=offer_id)
-
             car = offer.car_id
             car.status = "RDY"
             car.save()
-
             offer.delete()
-            return HttpResponse(status=status.HTTP_204_NO_CONTENT)
-
         except Offer.DoesNotExist:
-            return HttpResponse("Offer not found.", status=status.HTTP_404_NOT_FOUND)
+            raise ValidationError("offer does not exist")
